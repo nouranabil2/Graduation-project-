@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 import datetime
 from sys import flags
 import pyttsx3
@@ -17,8 +18,10 @@ from predict import yolo_model
 
      
 engine = pyttsx3.init('sapi5')
+rate=engine.getProperty('rate')
+engine.setProperty('rate', 150)
 voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[1].id)
+engine.setProperty('voice', voices[0].id)
 def speak(audio):
 	engine.say(audio)
 	engine.runAndWait()
@@ -75,8 +78,10 @@ def respond(query):
     if 'hi' in query:
         greet = "hello "
         speak(greet)
+        return
     if 'how are you'in query:
         speak("I'm very well, thanks for asking ")
+        return
     #2:time
     if there_exists(["what's the time","tell me the time","what time is it","what is the time"]):
 
@@ -88,6 +93,7 @@ def respond(query):
         minutes = time[1]
         time = f'{hours} {minutes}'
         speak(time)    
+        return
     #3:music
     if 'play music' in query or "play song" in query:
             speak("Here you go with music")
@@ -96,39 +102,50 @@ def respond(query):
             songs = os.listdir(music_dir)
             print(songs)   
             random = os.startfile(os.path.join(music_dir, songs[1]))     
-    if'close'in query :
-            songs.close()   
+            return
+   
     if'recognition'in query :
           model = FaceRecognition()
           #cam = cv2.VideoCapture(0)
-    
-          extractEmbeddings()
           count=0
+          a=[]
           flag=0
-          while True:
-           
+          #while True:
+          for x in range(3):
             #ret, image = cam.read()
             image=cv2.imread('download.jpg')
             names,boxes= model.recognize(image)
             model.draw_boxes(image,names,boxes)
-            for f in names:
-             if f != 'Unknown':
-                 flag=1
-                 speak(f +"is around you")
-            cv2.imshow("image", image) 
             
-            #if cv2.waitKey(1) == 27:  # break if press ESC key
-            if flag==0:
-                
-                speak("all people around you are unknown")
-                speak("goodbye Noura")
-                exit()
+            if x==0:
+             for f in names:
+               if f != 'Unknown' :
+                 speak(f +"is around you")
+                 a.insert(count,f) 
+                 count=count+1
+            else:
+             while(len(names)):
+               for f in names:
+                 for h in a:
+                      if f == h:
+                          names.remove(f)
+                          break
+                      
 
-                
-            if flag == 1:
-             speak("Those are the known people around you  ")   
-             speak("goodbye Noura")
-             exit()   
+             for f in names:
+                if f != 'Unknown' :
+                    speak(f +"is around you")
+                    a.insert(count,f) 
+                    count=count+1
+                else:
+                  break
+
+
+
+            cv2.imshow("image", image) 
+            return
+            #if cv2.waitKey(1) == 27:  # break if press ESC key
+           
                    
     if'view'in query :
       yolo = yolo_model()
@@ -149,15 +166,15 @@ def respond(query):
     if there_exists(["exit", "quit", "goodbye","bye"]):
         speak("bye Noura")
         exit()       
-    #else: speak("Sorry,Unable to Recognize your voice. can you please repeat again")
+    else: speak("Sorry,Unable to Recognize your voice. can you please repeat again")
 
 wishMe() 
 username() 
   
 while(1):   
     voice_data = query = takeCommand().lower()# get the voice input
+    
     if voice_data != 'none' :
      x=respond(voice_data) # respond
-     if x == None:
-       speak("Sorry,Unable to Recognize your voice. can you please repeat again")
+     
     
