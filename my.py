@@ -112,7 +112,8 @@ def respond(query):
           flag=0
           #while True:
           for x in range(3):
-            #ret, image = cam.read()
+            
+             #ret, image = cam.read()
             image=cv2.imread('download.jpg')
             names,boxes= model.recognize(image)
             model.draw_boxes(image,names,boxes)
@@ -120,6 +121,7 @@ def respond(query):
             if x==0:
              for f in names:
                if f != 'Unknown' :
+                 flag=1
                  speak(f +"is around you")
                  a.insert(count,f) 
                  count=count+1
@@ -141,39 +143,44 @@ def respond(query):
                   break
 
 
-
-            cv2.imshow("image", image) 
+            if flag == 1:
+                speak("those are the people around you")
+            #cv2.imshow("image", image) 
             return
             #if cv2.waitKey(1) == 27:  # break if press ESC key
            
                    
     if'view'in query :
       yolo = yolo_model()
+      #cam = cv2.VideoCapture(0)
       c =0 
+      #for x in range(3):
+       #     ret, image = cam.read()
       pred = yolo.predict(cv2.imread('data/dog.jpg'))
+        #    pred = yolo.predict(image)
+      
        
       for x in pred:
-           if c!=0:
-              speak("and" )  
-           c=pred[x][0][5]*100
-           intc=int(c)
-           speak("  by" )  
-           speak(intc ) 
-           speak( "Percent in front of you there is a"+pred[x][0][0])
+        if c!=0:
+         speak("and"+pred[x][0][0] )  
+        else:   
+            c=1
+            speak( "In front of you there is a"+pred[x][0][0])
+          
       speak("That is the full view in front of you  ")   
-      speak("goodbye Noura")
-      exit()
+      return
+     
     if there_exists(["exit", "quit", "goodbye","bye"]):
         speak("bye Noura")
         exit()       
     else: speak("Sorry,Unable to Recognize your voice. can you please repeat again")
 
-wishMe() 
+#wishMe() 
 username() 
   
 while(1):   
     voice_data = query = takeCommand().lower()# get the voice input
-    
+    #voice_data='view'
     if voice_data != 'none' :
      x=respond(voice_data) # respond
      
