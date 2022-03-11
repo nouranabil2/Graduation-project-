@@ -1,20 +1,16 @@
-from __future__ import annotations
 import os
 import cv2
 import random
 from matplotlib import image, transforms
 import numpy as np
 import tensorflow as tf
-import utils as utils
-from cfg_config import cfg
+import core.utils as utils
+from core.cfg_config import cfg
 
 class Dataset(object):
-    def __init__(self,FLAGS,is_training:bool,dataset_type:str="converted_coco"):
-
-        self.tiny=FLAGS.tiny
-        self.strides,self.anchors,NUM_CLASS,XY_SCALE = utils.load_config(FLAGS)
+    def __init__(self,is_training:bool,dataset_type:str="converted_coco"):
+        self.strides,self.anchors,NUM_CLASS,XY_SCALE = utils.load_config()
         self.dataset_type= dataset_type
-
         self.annot_path = (
             cfg.TRAIN.ANNOT_PATH if is_training else cfg.TEST.ANNOT_PATH
         )
@@ -26,7 +22,7 @@ class Dataset(object):
         )
         self.data_aug = cfg.TRAIN.DATA_AUG if is_training else cfg.TEST.DATA_AUG
         self.train_input_sizes = cfg.TRAIN.INPUT_SIZE
-        self.classes = utils.read_class_names(cfg.YOLO.CLASSES)
+        self.classes = utils.read_class_name(cfg.YOLO.CLASSES)
         self.num_classes = len(self.classes)
         self.anchor_per_scale = cfg.YOLO.ANCHOR_PER_SCALE
         self.max_bbox_per_scale = 150
@@ -42,7 +38,7 @@ class Dataset(object):
             txt = f.readlines()
             if self.dataset_type == "converted_coco":
                 annotations = [
-                    line.strip() for line in txt if len(line.strip.split()[1:]) != 0
+                    line.strip() for line in txt if len(line.strip().split()[1:]) != 0
                 ]
         np.random.shuffle(annotations)
         return annotations
@@ -57,8 +53,8 @@ class Dataset(object):
         )
         if self.data_aug:
             image , bboxes = self.random_horizontal_flip(np.copy(image),np.copy(bboxes))
-            image , bboxes = self.random_crop(np.copy(image,np.copy(bboxes)))
-            image , bboxes = self.random_translate(np.copy(image,np.copy(bboxes)))
+            image , bboxes = self.random_crop(np.copy(image),np.copy(bboxes))
+            image , bboxes = self.random_translate(np.copy(image),np.copy(bboxes))
         image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
 
         image, bboxes = utils.image_preprocess(
@@ -72,8 +68,9 @@ class Dataset(object):
         return self
 
     def __next__(self):
-        with tf.device("/cpu0"):
-            self.train_output_size = self.train_input_size//self.strides
+        with tf.device("/cpu:0"):
+            self.train_input_size = cfg.TRAIN.INPUT_SIZE
+            self.train_output_sizes = self.train_input_size//self.strides
             batch_data = np.zeros(
                 (
                     self.batch_size,
@@ -170,6 +167,7 @@ class Dataset(object):
             image = image[:,::-1,:]
             # calculates (width - Xul) and (width - Xlr) 
             bounding_boxes[:,[0,2]] = w - bounding_boxes[:,[2,0]]
+        return image,bounding_boxes
     def random_crop(self,image,bounding_boxes):
         if random.random()<0.5:
             #finds minimum of all upper left Xs and Ys and max of all lower right Xs and Ys
@@ -183,8 +181,8 @@ class Dataset(object):
                 axis=-1,
             )
             allowed_crop_left  = allowed_crop[0]
-            allowed_crop_right = allowed_crop[2]
-            allowed_crop_up    = w - allowed_crop[1]
+            allowed_crop_right = w - allowed_crop[2]
+            allowed_crop_up    = allowed_crop[1]
             allowed_crop_down  = h - allowed_crop[3]
 
             crop_xmin = max(
@@ -214,8 +212,8 @@ class Dataset(object):
             axis=-1,
         )
         allowed_crop_left  = allowed_crop[0]
-        allowed_crop_right = allowed_crop[2]
-        allowed_crop_up    = w - allowed_crop[1]
+        allowed_crop_right = w - allowed_crop[2]
+        allowed_crop_up    = allowed_crop[1]
         allowed_crop_down  = h - allowed_crop[3]
         #get random translation from allowed range
         tx = random.uniform(-(allowed_crop_left - 1), (allowed_crop_right - 1))
@@ -284,10 +282,9 @@ class Dataset(object):
                 ],
                 axis=-1,
             )
+            
             #scales bbox wrt stride
-            bbox_xywh_scaled = (
-                1.0 * bbox_xywh[np.newaxis, :] / self.strides[:, np.newaxis]
-            )
+            bbox_xywh_scaled = (1.0 * bbox_xywh[np.newaxis, :] / self.strides[:, np.newaxis])
             iou = []
             exist_positive = False
             for i in range(3):
@@ -306,9 +303,7 @@ class Dataset(object):
                 iou_mask = iou_scale > 0.3
 
                 if np.any(iou_mask):
-                    xind, yind = np.floor(bbox_xywh_scaled[i, 0:2]).astype(
-                        np.int32
-                    )
+                    xind, yind = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32)
                     label[i][yind, xind, iou_mask, :] = 0
                     label[i][yind, xind, iou_mask, 0:4] = bbox_xywh
                     label[i][yind, xind, iou_mask, 4:5] = 1.0

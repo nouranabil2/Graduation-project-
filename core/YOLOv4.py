@@ -1,71 +1,79 @@
 from turtle import shape
 import numpy as np
 import tensorflow as tf
-import utils as utils
-import block as block
-import CSPdarknet53 as CSPdarknet53
-from cfg_config import cfg
+from core.utils import *
+import core.block as block
+import core.CSPdarknet53 as CSPdarknet53
+from core.cfg_config import cfg
 
 def YOLOv4(input_layer, NUM_CLASS):
     first_route,second_route,conv = CSPdarknet53.cspdarknet53(input_layer)
+    ###########ss#########################
+    conv = block.convolutional_block(conv,(1,1,1024,512) )
+    conv = block.convolutional_block(conv,(3,3,512,1024) )
+    conv = block.convolutional_block(conv,(1,1,1024,512) )
+
+    conv = tf.concat([tf.nn.max_pool(conv, ksize=13, padding='SAME', strides=1), tf.nn.max_pool(conv, ksize=9, padding='SAME', strides=1)
+                            , tf.nn.max_pool(conv, ksize=5, padding='SAME', strides=1), conv], axis=-1)
+    ###########ss#########################
+    conv = block.convolutional_block(conv,(1,1,2048,512) )
+    conv = block.convolutional_block(conv,(3,3,512,1024) )
+    conv = block.convolutional_block(conv,(1,1,1024,512) )
 
     route = conv 
-    conv = block.convolutional_block(conv,(1,1,512,256),activation_func="leaky_relu")
+    conv = block.convolutional_block(conv,(1,1,512,256) )
     conv = block.upsample(conv)
-
-    second_route = block.convolutional_block(second_route,(1,1,512,256),activation_func="leaky_relu")
-
+    second_route = block.convolutional_block(second_route,(1,1,512,256) )
     conv = tf.concat([second_route,conv],axis = -1)
 
-    conv = block.convolutional_block(conv,(1,1,512,256),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(3,3,256,512),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(1,1,512,256),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(3,3,256,512),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(1,1,512,256),activation_func="leaky_relu")
+    conv = block.convolutional_block(conv,(1,1,512,256) )
+    conv = block.convolutional_block(conv,(3,3,256,512) )
+    conv = block.convolutional_block(conv,(1,1,512,256) )
+    conv = block.convolutional_block(conv,(3,3,256,512) )
+    conv = block.convolutional_block(conv,(1,1,512,256) )
 
     second_route = conv
-
-    conv = block.convolutional_block(conv,(1,1,256,128),activation_func="leaky_relu")
+    conv = block.convolutional_block(conv,(1,1,256,128) )
     conv = block.upsample(conv)
-
-    first_route = block.convolutional_block(first_route,(1,1,256,128),activation_func="leaky_relu")
+    first_route = block.convolutional_block(first_route,(1,1,256,128) )
     conv = tf.concat([first_route,conv],axis=-1)
 
-    conv = block.convolutional_block(conv,(1,1,256,128),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(3,3,128,256),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(1,1,256,128),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(3,3,128,256),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(1,1,256,128),activation_func="leaky_relu")
+    conv = block.convolutional_block(conv,(1,1,256,128) )
+    conv = block.convolutional_block(conv,(3,3,128,256) )
+    conv = block.convolutional_block(conv,(1,1,256,128) )
+    conv = block.convolutional_block(conv,(3,3,128,256) )
+    conv = block.convolutional_block(conv,(1,1,256,128) )
+
 
     first_route = conv 
-    conv = block.convolutional_block(conv,(3,3,128,256),activation_func="leaky_relu")
+    conv = block.convolutional_block(conv,(3,3,128,256) )
+    small_bounding_box = block.convolutional_block(conv,(1,1,256,3*(NUM_CLASS+5)),activate=False,batch_normalize=False )
 
-    small_bounding_box = block.convolutional_block(conv,(1,1,256,3*(NUM_CLASS+5)),activate=False,batch_normalize=False,activation_func="leaky_relu")
 
-    conv = block.convolutional_block(first_route,(3,3,128,256),downsample=True,activation_func="leaky_relu")
+    conv = block.convolutional_block(first_route,(3,3,128,256),downsample=True )
     conv=tf.concat([conv,second_route],axis=-1)
 
-    conv = block.convolutional_block(conv,(1,1,512,256),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(3,3,256,512),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(1,1,512,256),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(3,3,256,512),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(1,1,512,256),activation_func="leaky_relu")
+    conv = block.convolutional_block(conv,(1,1,512,256) )
+    conv = block.convolutional_block(conv,(3,3,256,512) )
+    conv = block.convolutional_block(conv,(1,1,512,256) )
+    conv = block.convolutional_block(conv,(3,3,256,512) )
+    conv = block.convolutional_block(conv,(1,1,512,256) )
 
     second_route =conv
-    conv = block.convolutional_block(conv,(3,3,256,512),activation_func="leaky_relu")
-    med_bounding_box = block.convolutional_block(conv,(1,1,512,3*(NUM_CLASS+5)),activate=False,batch_normalize=False,activation_func="leaky_relu")
+    conv = block.convolutional_block(conv,(3,3,256,512) )
+    med_bounding_box = block.convolutional_block(conv,(1,1,512,3*(NUM_CLASS+5)),activate=False,batch_normalize=False )
 
-    conv = block.convolutional_block(second_route,(3,3,256,512),downsample=True,activation_func="leaky_relu")
+    conv = block.convolutional_block(second_route,(3,3,256,512),downsample=True )
     conv=tf.concat([conv,route],axis=-1)
 
-    conv = block.convolutional_block(conv,(1,1,1024,512),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(3,3,512,1024),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(1,1,1024,512),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(3,3,512,1024),activation_func="leaky_relu")
-    conv = block.convolutional_block(conv,(1,1,1024,512),activation_func="leaky_relu")
+    conv = block.convolutional_block(conv,(1,1,1024,512) )
+    conv = block.convolutional_block(conv,(3,3,512,1024) )
+    conv = block.convolutional_block(conv,(1,1,1024,512) )
+    conv = block.convolutional_block(conv,(3,3,512,1024) )
+    conv = block.convolutional_block(conv,(1,1,1024,512) )
 
-    conv = block.convolutional_block(conv,(3,3,512,1024),activation_func="leaky_relu")
-    large_bounding_box = block.convolutional_block(conv,(1,1,1024,3*(NUM_CLASS+5)),activate=False,batch_normalize=False,activation_func="leaky_relu")
+    conv = block.convolutional_block(conv,(3,3,512,1024) )
+    large_bounding_box = block.convolutional_block(conv,(1,1,1024,3*(NUM_CLASS+5)),activate=False,batch_normalize=False )
     return[small_bounding_box,med_bounding_box,large_bounding_box]
 
 # input_layer = tf.keras.layers.Input([cfg.TRAIN.INPUT_SIZE, cfg.TRAIN.INPUT_SIZE, 3])
@@ -73,7 +81,7 @@ def YOLOv4(input_layer, NUM_CLASS):
 # model = tf.keras.Model(inputs=input_layer, outputs=yolo)
 # model.summary()
 def decode_output(net_output,output_size,NUM_CLASS,STRIDES,ANCHORS,i,XYSCALE=[1,1,1]):
-    net_output = tf.reshape(net_output,(tf.shape(net_output[0],output_size,output_size,3,5+NUM_CLASS) ))
+    net_output = tf.reshape( net_output,(tf.shape(net_output)[0],output_size,output_size,3,5+NUM_CLASS) )
     dxdy,dwdh,confidance,probabilty = tf.split(net_output,(2,2,1,NUM_CLASS),axis=-1)
     # meshgrid returns to arrays 
     #one for x values and one for y values 
@@ -102,8 +110,6 @@ def decode_output(net_output,output_size,NUM_CLASS,STRIDES,ANCHORS,i,XYSCALE=[1,
     (64,3,3,3,2)
     genral case
     (conv_output.shape[0],output_size,output_size,number_of_anchors,2)
-
-
 
     """
     xy_grid = tf.meshgrid(tf.range(output_size),tf.range(output_size))
@@ -134,12 +140,12 @@ def compute_loss(predication,conv,label,bounding_boxes,STRIDES,IOU_LOSS_THRESH,N
     obj = label[:,:,:,:,4:5]
     label_prob = label[:,:,:,:,5:]
 
-    giou = tf.expand_dims(utils.bbox_GenralizedIou(predection_xywh,label_xywh),axis=-1)
+    giou = tf.expand_dims(bbox_GenralizedIou(predection_xywh,label_xywh),axis=-1)
     input_size = tf.cast(input_size,tf.float32)
     bounding_boxes_loss_scale = 2.0 - 1.0*(label_xywh[:,:,:,:2:3]*label_xywh[:,:,:,:,3:4])/(input_size**2)
     giou_loss = obj * bounding_boxes_loss_scale *(1-giou)
 
-    iou = utils.bbox_iou(predection_xywh[:,:,:,:,np.newaxis,:],bounding_boxes[:,np.newaxis,:np.newaxis,np.newaxis,:,:])
+    iou = bbox_iou(predection_xywh[:,:,:,:,np.newaxis,:],bounding_boxes[:,np.newaxis,np.newaxis,np.newaxis,:,:])
     max_iou = tf.expand_dims(tf.reduce_max(iou,axis=-1),axis=-1)
     noobj = (1-obj) * tf.cast(max_iou>IOU_LOSS_THRESH,tf.float32)
     confidance = tf.pow(obj-predection_conf,2)

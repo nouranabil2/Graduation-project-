@@ -25,6 +25,7 @@ class yolo_model:
 
 		# determine only the *output* layer names that we need from YOLO
 		ln = self.net.getLayerNames()
+		print(self.net.getUnconnectedOutLayers())
 		ln = [ln[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
 
 
@@ -107,4 +108,4 @@ class yolo_model:
 
 yolo = yolo_model()
 pred = yolo.predict(cv2.imread('data/dog.jpg'))
-print(pred)
+print(pred[16][0])

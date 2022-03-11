@@ -1,3 +1,4 @@
+from posixpath import split
 import tensorflow as tf
 class BatchNormalization(tf.keras.layers.BatchNormalization):
     def call(self,x,training=False):
@@ -27,8 +28,10 @@ def convolutional_block(input_layer, filter_shape, activate=True, batch_normaliz
         elif activation_func=="leaky_relu":
             conv = tf.nn.leaky_relu(conv,alpha=0.1)
     return conv
+    
 def mish (layer):
     return layer*tf.math.tanh(tf.math.softplus(layer))
+
 def residual_block(input_layer,input_channel,filter1,filter2,activation_func="mish"):
     pass_route = input_layer
     conv = convolutional_block(input_layer,(1,1,input_channel,filter1),activation_func=activation_func)
