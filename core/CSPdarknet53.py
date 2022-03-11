@@ -1,15 +1,27 @@
+# import tensorflow as tf
+# import core.block as block
+
+from lib2to3.pytree import convert
+from unicodedata import name
 import tensorflow as tf
-import block as block
+import core.block as block
+from core.utils import *
 
 
+
+import matplotlib.pyplot as plt
+from tensorflow.keras.preprocessing.image import load_img
+from tensorflow.keras.preprocessing.image import img_to_array
+from tensorflow.keras.applications.imagenet_utils import decode_predictions
+from tensorflow.python.keras.utils import*
 
 def cspdarknet53(input_data):
     #(kernel_width,kernel_height,input_channel,output_channel)
-    input_data = block.convolutional_block(input_data,(3,3,3,32))
-    input_data = block.convolutional_block(input_data,(3,3,32,64),downsample=True)
+    input_data = block.convolutional_block(input_data,(3,3,3,32))#
+    input_data = block.convolutional_block(input_data,(3,3,32,64),downsample=True)#
     route = input_data
 
-    route = block.convolutional_block(route,(1,1,64,64))
+    route = block.convolutional_block(route,(1,1,64,64))#
     input_data = block.convolutional_block(input_data,(1,1,64,64))
     #resiudual block(input_data,input_channel,filter_number1,filter_number2)
     #return s input+conv
@@ -26,14 +38,6 @@ def cspdarknet53(input_data):
     route = block.convolutional_block(route,(1,1,128,64))
     input_data = block.convolutional_block(input_data,(1,1,128,64))
 
-
-
-
-
-
-
-
-
     for i in range(2):
         input_data = block.residual_block(input_data,64,64,64)
     input_data = block.convolutional_block(input_data,(1,1,64,64))
@@ -44,10 +48,6 @@ def cspdarknet53(input_data):
     route = input_data
     route = block.convolutional_block(route,(1,1,256,128))
     input_data = block.convolutional_block(input_data,(1,1,256,128))
-
-
-
-
 
     for i in range(8):
         input_data = block.residual_block(input_data,128,128,128)
@@ -62,16 +62,6 @@ def cspdarknet53(input_data):
     route=block.convolutional_block(route,(1,1,512,256))
     input_data=block.convolutional_block(input_data,(1,1,512,256))
 
-
-
-
-
-
-
-
-
-
-
     for i in range(8):
         input_data=block.residual_block(input_data,256,256,256)
     input_data=block.convolutional_block(input_data,(1,1,256,256))
@@ -83,48 +73,56 @@ def cspdarknet53(input_data):
     route = block.convolutional_block(route,(1,1,1024,512))
     input_data = block.convolutional_block(input_data,(1,1,1024,512))
 
-
-
-
-
-
-
-
-
-
     for i in range(4):
         input_data = block.residual_block(input_data,512,512,512)
     input_data = block.convolutional_block(input_data,(1,1,512,512))
     input_data = tf.concat([input_data, route], axis=-1)
 
     input_data = block.convolutional_block(input_data,(1,1,1024,1024))
-    input_data = block.convolutional_block(input_data,(1,1,1024,512),activation_func="leaky_relu")
-    input_data = block.convolutional_block(input_data,(3,3,512,1024),activation_func="leaky_relu")
-    input_data = block.convolutional_block(input_data,(1,1,1024,512),activation_func="leaky_relu")
 
-    input_data = tf.concat([tf.nn.max_pool(input_data, ksize=13, padding='SAME', strides=1), tf.nn.max_pool(input_data, ksize=9, padding='SAME', strides=1)
-                            , tf.nn.max_pool(input_data, ksize=5, padding='SAME', strides=1), input_data], axis=-1)
-    input_data = block.convolutional_block(input_data,(1,1,2048,512),activation_func="leaky_relu")
-    input_data = block.convolutional_block(input_data,(3,3,512,1024),activation_func="leaky_relu")
-    input_data = block.convolutional_block(input_data,(1,1,1024,512),activation_func="leaky_relu")
     return first_route,second_route,input_data
-    
-input_layer = tf.keras.layers.Input([512,512, 3])
-_1,_2,yolo = cspdarknet53(input_layer)
-model = tf.keras.Model(inputs=input_layer, outputs=yolo)
-model.summary()
+
+#tf.config.run_functions_eagerly(True)
+#input_layer = tf.keras.layers.Input([256,256, 3])
+#_1,_2,yolo = cspdarknet53(input_layer)
+
+                             
+#model = tf.keras.Model(inputs=input_layer, outputs=yolo)
+#model.load_weights('./cspdarknet53.h5')
+#model = tf.keras.models.load_model('cspdarknet53.h5',custom_objects={'mish': mish})
+
+#model.summary()
+# print(np.array(model.get_layer("conv2d_72").get_weights()[1]).shape)
+# print(np.array(model.get_layer("conv2d_72").get_weights()[0]).shape)
 
 
 
 
+#filename = '../data/giraffe.jpg'
 
 
+#from PIL import Image
 
+#image = Image.open(filename).resize((256,256),resample=Image.BILINEAR)
+#image.save("test.jpg")
+#image_array = np.array(image,dtype=np.float32)/255.0
 
+#image_array=image_array[np.newaxis,...]
+#x = tf.keras.Input(shape=(256,256))
+#x= tf.convert_to_tensor(image_array)
 
+#predictions_dark =model(x)# model.predict(image_array)
 
+# predictions_vgg = vgg_model.predict(processed_image)
+# label_vgg = decode_predictions(tf.reshape(predictions_vgg,(1,1000)).numpy())
+# for prediction_id in range(len(label_vgg[0])):
+#     print(label_vgg[0][prediction_id])
 
+#print("++++++++++++++++++++++++++++===")
 
-
-    
-
+#dark = np.argmax(tf.reshape(predictions_dark,(1,1000)).numpy())
+#print(dark)
+#predictions_vgg = model.predict(x)
+#label_vgg = decode_predictions(tf.reshape(predictions_vgg,(1,1000)).numpy())
+#for prediction_id in range(len(label_vgg[0])):
+#   print(label_vgg[0][prediction_id])
