@@ -162,24 +162,3 @@ def compute_loss(predication,conv,label,bounding_boxes,STRIDES,IOU_LOSS_THRESH,N
     return giou_loss,confidance_loss,prob_loss
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    

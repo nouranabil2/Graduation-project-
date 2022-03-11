@@ -1,9 +1,10 @@
 import tensorflow as tf
 from absl import app, flags, logging
 from absl.flags import FLAGS
-from core.yolov4 import YOLO, decode, filter_boxes
+from core.YOLOv4 import YOLO, decode, filter_boxes
 import core.utils as utils
-from core.config import cfg
+from core.cfg_config import cfg
+
 
 flags.DEFINE_string('weights', './yolov4-csp.weights', 'path to weights file')
 flags.DEFINE_string('output', './data/yolov4-416', 'path to output')
