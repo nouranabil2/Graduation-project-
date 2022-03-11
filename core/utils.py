@@ -3,7 +3,7 @@ import random
 import colorsys
 import numpy as np
 import tensorflow as tf
-from cfg_config import cfg
+from core.cfg_config import cfg
 
 
 def read_class_name(class_file_name):
@@ -176,6 +176,7 @@ def load_freeze_layer():
 def freeze_all(model,frozen=True):
     model.trainable = not frozen
     if isinstance(model,tf.keras.Model):
+        print('dddd')
         for layer in model.layers:
             freeze_all(layer,frozen)
 def unfreeze_all(model,frozen=False):
@@ -188,6 +189,104 @@ def unfreeze_all(model,frozen=False):
 def non_maximum_suppression(bounding_boxes,iou_threshold,sigma=0.3,method="nms"):
     pass
 
+def decode_tf(conv_output, output_size, NUM_CLASS, STRIDES, ANCHORS, i=0, XYSCALE=[1, 1, 1]):
+    batch_size = tf.shape(conv_output)[0]
+    conv_output = tf.reshape(conv_output,
+                             (batch_size, output_size, output_size, 3, 5 + NUM_CLASS))
 
-def load_weights(model,weights_path):
-    pass
+    conv_raw_dxdy, conv_raw_dwdh, conv_raw_conf, conv_raw_prob = tf.split(conv_output, (2, 2, 1, NUM_CLASS),
+                                                                          axis=-1)
+
+    xy_grid = tf.meshgrid(tf.range(output_size), tf.range(output_size))
+    xy_grid = tf.expand_dims(tf.stack(xy_grid, axis=-1), axis=2)  # [gx, gy, 1, 2]
+    xy_grid = tf.tile(tf.expand_dims(xy_grid, axis=0), [batch_size, 1, 1, 3, 1])
+
+    xy_grid = tf.cast(xy_grid, tf.float32)
+
+    pred_xy = ((tf.sigmoid(conv_raw_dxdy) * XYSCALE[i]) - 0.5 * (XYSCALE[i] - 1) + xy_grid) * \
+              STRIDES[i]
+    pred_wh = (tf.exp(conv_raw_dwdh) * ANCHORS[i])
+    pred_xywh = tf.concat([pred_xy, pred_wh], axis=-1)
+
+    pred_conf = tf.sigmoid(conv_raw_conf)
+    pred_prob = tf.sigmoid(conv_raw_prob)
+
+    pred_prob = pred_conf * pred_prob
+    pred_prob = tf.reshape(pred_prob, (batch_size, -1, NUM_CLASS))
+    pred_xywh = tf.reshape(pred_xywh, (batch_size, -1, 4))
+
+    return pred_xywh, pred_prob
+def load_weights(model,weights_path,is_darkNet=False):
+    layer_size=110
+    output_pos = [93,101,109]
+    with open(weights_path,"rb") as f:
+        m,n,rev,s,_=np.fromfile(f,dtype=np.int32,count=5)
+        for i in range(layer_size):
+            conv_name= f"conv2d_{i}" if i>0 else "conv2d"
+            bn_name=f"batch_normalization_{i}" if i>0 else "batch_normalization"
+            layer = model.get_layer(conv_name)
+            filters = layer.filters
+            kernel_size=layer.kernel_size[0]
+            in_dim =layer.input_shape[-1]
+            
+            if i not in output_pos:
+                batch_normalization_weights = np.fromfile(f,dtype=np.float32,count=4*filters)
+                batch_normalization_weights = batch_normalization_weights.reshape((4,filters))[[1,0,2,3]]
+                bn_layer = model.get_layer(bn_name)
+            else:
+                conv_bais = np.fromfile(f,dtype=np.float32,count=filters)
+            conv_shape = (filters,in_dim,kernel_size,kernel_size)
+            conv_weights = np.fromfile(f,dtype=np.float32,count=np.product(conv_shape))
+            conv_weights = conv_weights.reshape(conv_shape).transpose([2,3,1,0])
+
+            if i not in output_pos:
+                layer.set_weights([conv_weights])
+                bn_layer.set_weights(batch_normalization_weights)
+            else:
+                layer.set_weights([conv_weights,conv_bais])
+        f.close()
+
+def load_darknet(model,weights_path):
+    layer_size=71
+    with open(weights_path,"rb") as weights_file:
+
+        major, minor, revision = np.fromfile(weights_file,dtype=np.int32,count=3)
+        
+        if (major*10+minor)>=2 and major<1000 and minor<1000:
+            seen = np.fromfile(weights_file,dtype=np.int64,count=1)
+        else:
+            seen =np.fromfile(weights_file,dtype=np.int32,count=1)
+        print(f"MINOR {minor} MAJOR {major} REVISION{revision} ,SEEN{type(seen[0])}{seen}")
+
+        for i in range(layer_size+1):
+            conv_name= f"conv2d_{i}" if i>0 else "conv2d"
+            bn_name=f"batch_normalization_{i}" if i>0 else "batch_normalization"
+            #print(F"=====================LOADING CONVOLUOTIONAL i = {i+1}===========================")
+            layer = model.get_layer(conv_name)
+            filters = layer.filters
+            kernel_size=layer.kernel_size[0]
+            in_dim =layer.input_shape[-1]
+            s = "filters:"+str(filters)
+            
+            if i != 72:
+                s+=" , bn "
+                batch_normalization_weights = np.fromfile(weights_file,dtype=np.float32,count=4*filters)
+                batch_normalization_weights = batch_normalization_weights.reshape((4,filters))[[1,0,2,3]]
+                names = ["scales","bais","mean" "variance"]
+                #print(batch_normalization_weights)
+                bn_layer = model.get_layer(bn_name)
+            else:
+                conv_bias = np.fromfile(weights_file, dtype=np.float32, count=filters)
+
+            conv_shape = (filters,in_dim,kernel_size,kernel_size)
+            conv_weights = np.fromfile(weights_file,dtype=np.float32,count=np.product(conv_shape))
+            #print(conv_weights)
+            conv_weights = conv_weights.reshape(conv_shape).transpose([2, 3, 1, 0])
+            
+
+            if i !=72:
+                layer.set_weights([conv_weights])
+                bn_layer.set_weights(batch_normalization_weights)
+            else:
+                layer.set_weights([conv_weights,conv_bias])
+        weights_file.close()
