@@ -8,7 +8,7 @@ OUTPUT_PATH="./data/yolov4-416"
 INPUT_SIZE = cfg.INPUT_SIZE
 
 def save_tf():
-  STRIDES, ANCHORS, NUM_CLASS, XYSCALE = utils.load_config(FLAGS)
+  STRIDES, ANCHORS, NUM_CLASS, XYSCALE = utils.load_config()
 
   input_layer = tf.keras.layers.Input([INPUT_SIZE,INPUT_SIZE, 3])
   feature_maps = YOLOv4(input_layer, NUM_CLASS)
@@ -16,11 +16,11 @@ def save_tf():
   prob_tensors = []
   for i, fm in enumerate(feature_maps):
     if i == 0:
-      output_tensors = decode_tf(fm, INPUT_SIZE // 8, NUM_CLASS, STRIDES, ANCHORS, i, XYSCALE, FLAGS.framework)
+      output_tensors = decode_tf(fm, INPUT_SIZE // 8, NUM_CLASS, STRIDES, ANCHORS, i, XYSCALE)
     elif i == 1:
-      output_tensors = decode_tf(fm, INPUT_SIZE // 16, NUM_CLASS, STRIDES, ANCHORS, i, XYSCALE, FLAGS.framework)
+      output_tensors = decode_tf(fm, INPUT_SIZE // 16, NUM_CLASS, STRIDES, ANCHORS, i, XYSCALE)
     else:
-      output_tensors = decode_tf(fm,INPUT_SIZE // 32, NUM_CLASS, STRIDES, ANCHORS, i, XYSCALE, FLAGS.framework)
+      output_tensors = decode_tf(fm,INPUT_SIZE // 32, NUM_CLASS, STRIDES, ANCHORS, i, XYSCALE)
     bbox_tensors.append(output_tensors[0])
     prob_tensors.append(output_tensors[1])
   pred_bbox = tf.concat(bbox_tensors, axis=1)
