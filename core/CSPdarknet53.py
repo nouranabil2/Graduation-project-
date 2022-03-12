@@ -82,96 +82,51 @@ def cspdarknet53(input_data):
 
     return first_route,second_route,input_data
 
-#tf.config.run_functions_eagerly(True)
-#input_layer = tf.keras.layers.Input([256,256, 3])
-#_1,_2,yolo = cspdarknet53(input_layer)
+# tf.config.run_functions_eagerly(True)
+# input_layer = tf.keras.layers.Input([256,256, 3])
+# _1,_2,yolo = cspdarknet53(input_layer)
+# yolo = tf.keras.layers.AveragePooling2D(pool_size=(8,8))(yolo)
+# yolo = tf.keras.layers.Conv2D(filters=1000,kernel_size=1,strides=1,padding="same") (yolo)
+# yolo = tf.keras.layers.Softmax()(yolo)
+# model = tf.keras.Model(inputs=input_layer, outputs=yolo)
 
-                             
-#model = tf.keras.Model(inputs=input_layer, outputs=yolo)
 #model.load_weights('./cspdarknet53.h5')
 #model = tf.keras.models.load_model('cspdarknet53.h5',custom_objects={'mish': mish})
-
+# load_darknet(model,"../csdarknet53-omega_final.weights")
 #model.summary()
 # print(np.array(model.get_layer("conv2d_72").get_weights()[1]).shape)
-# print(np.array(model.get_layer("conv2d_72").get_weights()[0]).shape)
 
 
 
 
-#filename = '../data/giraffe.jpg'
+
+# filename = '../data/eagle.jpg'
 
 
-#from PIL import Image
+# from PIL import Image
 
-#image = Image.open(filename).resize((256,256),resample=Image.BILINEAR)
-#image.save("test.jpg")
-#image_array = np.array(image,dtype=np.float32)/255.0
+# image = Image.open(filename).resize((256,256),resample=Image.BILINEAR)
 
-#image_array=image_array[np.newaxis,...]
-#x = tf.keras.Input(shape=(256,256))
-#x= tf.convert_to_tensor(image_array)
+# image_array = np.array(image,dtype=np.float32)/255.0
 
-#predictions_dark =model(x)# model.predict(image_array)
+# image_array=image_array[np.newaxis,...]
+# x = tf.keras.Input(shape=(256,256))
+# x= tf.convert_to_tensor(image_array)
+
+# predictions_dark =model(x)# model.predict(image_array)
 
 # predictions_vgg = vgg_model.predict(processed_image)
 # label_vgg = decode_predictions(tf.reshape(predictions_vgg,(1,1000)).numpy())
 # for prediction_id in range(len(label_vgg[0])):
 #     print(label_vgg[0][prediction_id])
 
-#print("++++++++++++++++++++++++++++===")
+# print("++++++++++++++++++++++++++++===")
 
-#dark = np.argmax(tf.reshape(predictions_dark,(1,1000)).numpy())
-#print(dark)
-#predictions_vgg = model.predict(x)
-#label_vgg = decode_predictions(tf.reshape(predictions_vgg,(1,1000)).numpy())
-#for prediction_id in range(len(label_vgg[0])):
-#   print(label_vgg[0][prediction_id])
-
-
-
-
-
-#tf.config.run_functions_eagerly(True)
-#input_layer = tf.keras.layers.Input([256,256, 3])
-#_1,_2,yolo = cspdarknet53(input_layer)
-
-                             
-#model = tf.keras.Model(inputs=input_layer, outputs=yolo)
-#model.load_weights('./cspdarknet53.h5')
-#model = tf.keras.models.load_model('cspdarknet53.h5',custom_objects={'mish': mish})
-
-#model.summary()
-# print(np.array(model.get_layer("conv2d_72").get_weights()[1]).shape)
-# print(np.array(model.get_layer("conv2d_72").get_weights()[0]).shape)
-
-
-
-
-#filename = '../data/giraffe.jpg'
-
-
-#from PIL import Image
-
-#image = Image.open(filename).resize((256,256),resample=Image.BILINEAR)
-#image.save("test.jpg")
-#image_array = np.array(image,dtype=np.float32)/255.0
-
-#image_array=image_array[np.newaxis,...]
-#x = tf.keras.Input(shape=(256,256))
-#x= tf.convert_to_tensor(image_array)
-
-#predictions_dark =model(x)# model.predict(image_array)
-
-# predictions_vgg = vgg_model.predict(processed_image)
+# dark = np.argmax(tf.reshape(predictions_dark,(1,1000)).numpy())
+# print(dark)
+# predictions_vgg = model.predict(x)
 # label_vgg = decode_predictions(tf.reshape(predictions_vgg,(1,1000)).numpy())
 # for prediction_id in range(len(label_vgg[0])):
-#     print(label_vgg[0][prediction_id])
-
-#print("++++++++++++++++++++++++++++===")
-
-#dark = np.argmax(tf.reshape(predictions_dark,(1,1000)).numpy())
-#print(dark)
-#predictions_vgg = model.predict(x)
-#label_vgg = decode_predictions(tf.reshape(predictions_vgg,(1,1000)).numpy())
-#for prediction_id in range(len(label_vgg[0])):
 #   print(label_vgg[0][prediction_id])
+
+
