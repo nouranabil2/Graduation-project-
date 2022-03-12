@@ -26,7 +26,7 @@ def save_tf():
   pred_bbox = tf.concat(bbox_tensors, axis=1)
   pred_prob = tf.concat(prob_tensors, axis=1)
 
-  boxes, pred_conf = filter_boxes(pred_bbox, pred_prob, score_threshold=FLAGS.score_thres, input_shape=tf.constant([FLAGS.input_size, FLAGS.input_size]))
+  boxes, pred_conf = filter_boxes(pred_bbox, pred_prob, score_threshold=0.4, input_shape=tf.constant([INPUT_SIZE,INPUT_SIZE]))
   pred = tf.concat([boxes, pred_conf], axis=-1)
   model = tf.keras.Model(input_layer, pred)
 
