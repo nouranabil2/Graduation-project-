@@ -15,18 +15,21 @@ def speak(audio):
 
 cap=cv2.VideoCapture(0)  
 reader=easyocr.Reader(lang_list=['en'])
-while True:
+for x in range(3):
     ret, img = cap.read()
-    im = Image.open("img")
-    output=reader.readtext(im, detail=0)
-#size=len(output)
-    for f in output:
-        speak(f)
+    #im = Image.open("img")
+    cv2.imshow("img",img)
+cv2.imwrite("img.png",img)
+output=reader.readtext(img, detail=0)
+
+for f in output:
+        
         print(f)
-    cap.release()
-    cv2.destroyAllWindows() 
 
-#read the image
-#im = Image.open("4.jpg")
+key = cv2.waitKey(1)
 
+cv2.destroyAllWindows()
+cap.release()
+
+speak(output)
 
