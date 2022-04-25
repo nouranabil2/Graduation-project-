@@ -9,12 +9,18 @@ from bidi.algorithm import get_display
 import arabic_reshaper
 from FaceR import FaceRecognition,extractEmbeddings
 from predict import yolo_model
+from translate import Translator
+
 
 engine = pyttsx3.init('sapi5')
 rate=engine.getProperty('rate')
 engine.setProperty('rate', 150)
 voices = engine.getProperty('voices')
 engine.setProperty('voice', voices[1].id)
+def trans(word):
+    translator= Translator(from_lang="english",to_lang="arabic")
+    translation = translator.translate(word)
+    return translation
 
 def speak(audio):
 	engine.say(audio)
@@ -61,7 +67,7 @@ def respond(query):
     if  "سلام"in query:
         con("لى اللقاء ")
         exit() 
-
+   
     if 'من حولي' in query:
     
           model = FaceRecognition()
@@ -127,13 +133,18 @@ def respond(query):
        
       for x in pred:
         if c!=0:
-         speak("and"+pred[x][0][0] )  
+            p=pred[x][0][0]
+            translated=trans(p)
+            con("و"+translated)
         else:   
             c=1
             con("امامك الان")
-            speak( "In front of you there is a"+pred[x][0][0])
+            p=pred[x][0][0]
+            translated=trans(p)
+            con(translated)
+            
           
-      speak("That is the full view in front of you  ")   
+      #speak("That is the full view in front of you  ")   
       return
 
 def wishMe():
@@ -144,7 +155,9 @@ def wishMe():
 
 	else:
 		con("مساء الخير")
-
+        
+k=trans("dog")
+      
 wishMe()
 while(1):
     voice_data=t=command()
