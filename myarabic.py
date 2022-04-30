@@ -4,7 +4,6 @@ import os
 from gtts import gTTS
 from playsound import playsound
 import  speech_recognition as sr
-import pyttsx3
 from bidi.algorithm import get_display
 import arabic_reshaper
 from FaceR import FaceRecognition,extractEmbeddings
@@ -12,19 +11,12 @@ from predict import yolo_model
 from translate import Translator
 
 
-engine = pyttsx3.init('sapi5')
-rate=engine.getProperty('rate')
-engine.setProperty('rate', 150)
-voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[1].id)
 def trans(word):
     translator= Translator(from_lang="english",to_lang="arabic")
     translation = translator.translate(word)
     return translation
 
-def speak(audio):
-	engine.say(audio)
-	engine.runAndWait()
+
 def formatArabicSentences(sentences):
    formatedSentences = arabic_reshaper.reshape(sentences)
    return get_display(formatedSentences)
@@ -57,16 +49,11 @@ def command():
     return t 
 
 def respond(query):
-    # 1: greeting
-    if 'مرحبا' in query:
-        con("مرحبا نورا")
-        return
+   
     if 'كيف حالك'in query:
         con("بخير انت كيف حالك")
         return
-    if  "سلام"in query:
-        con("لى اللقاء ")
-        exit() 
+   
    
     if 'من حولي' in query:
     
@@ -106,7 +93,7 @@ def respond(query):
 
              for f in names:
                 if f != 'Unknown' :
-                    speak(f +"is around you")
+                   # speak(f +"is around you")
                     a.insert(count,f) 
                     count=count+1
                 #else:
@@ -156,12 +143,31 @@ def wishMe():
 	else:
 		con("مساء الخير")
         
-k=trans("dog")
-      
+def distance():
+    return print("hi")
+def fun(voice_data):
+    while(1):
+        voice_data=t=command()
+        respond(voice_data)
+        if voice_data  =="سلام":
+            con("لى اللقاء ")
+            break
+
+    return
+       
+
 wishMe()
 while(1):
+    distance()
     voice_data=t=command()
-    respond(voice_data)
+    if voice_data == 'مرحبا':
+        con("مرحبا نورا")
+        fun(voice_data)
+        
+
+     
+
+    
 #con(t)
 
 
