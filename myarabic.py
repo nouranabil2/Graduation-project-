@@ -1,3 +1,4 @@
+import random
 import cv2
 import datetime
 import os
@@ -48,6 +49,9 @@ def command():
      return
     return t 
 
+   
+    return t 
+
 def respond(query):
    
     if 'كيف حالك'in query:
@@ -57,25 +61,24 @@ def respond(query):
    
     if 'من حولي' in query:
     
-          model = FaceRecognition()
-          #cam = cv2.VideoCapture(0)
-          count=0
-          a=[]
-          flag=0
-          x=0
-          #while True:
-          #for x in range(3):
-            
-            #ret, image = cam.read()
-          image=cv2.imread('download.jpg')
+        model = FaceRecognition()
+        cam = cv2.VideoCapture(0)
+        count=0
+        a=[]
+        flag=0
+        x=0
+          ##while True:
+        image=cv2.imread('2.jpg')
+        for x in range(4):
+          #ret, image = cam.read()
+          
           names,boxes= model.recognize(image)
-          model.draw_boxes(image,names,boxes)
-            
-            
+          model.draw_boxes(image,names,boxes)  
           if x==0:
-            con(" الاشخاص الذين تعرفهم حولك هم") 
+            
             for f in names:
                if f != 'Unknown' :
+                 
                  flag=1
 
                  #speak(f)
@@ -83,8 +86,8 @@ def respond(query):
                  a.insert(count,f) 
                  count=count+1
           else:
-             while(len(names)):
-               for f in names:
+             #while(len(names)):
+             for f in names:
                  for h in a:
                       if f == h:
                           names.remove(f)
@@ -94,31 +97,38 @@ def respond(query):
              for f in names:
                 if f != 'Unknown' :
                    # speak(f +"is around you")
+                    con(f)
                     a.insert(count,f) 
                     count=count+1
                 #else:
                  # break
-                
+          image=cv2.imread('Screenshot_2.png')
+          #cv2.imshow("image", image) 
+          #if x==2:
+              #image=cv2.imread('download.jpg')
+              #cv2.imshow("image", image) 
 
-
-          if flag == 1:
+        
                 #speak("those are the people around you")
-                cv2.imshow("image", image) 
-                return
+        if len(a):
+            con("  هؤلاء هم الاشخاص الذين تعرفهم حولك ") 
+        else:
+            con(" لا يوجد حولك شخص تعرفه ")     
+        
+        return
             #if cv2.waitKey(1) == 27:  # break if press ESC key
            
                    
-    if'ماذا حولي'in query :
+    if 'ماذا حولي' in query :
       yolo = yolo_model()
       #cam = cv2.VideoCapture(0)
       c =0 
       #for x in range(3):
        #     ret, image = cam.read()
-      pred = yolo.predict(cv2.imread('data/dog.jpg'))
+      pred = yolo.predict(cv2.imread('data/1.jpg'))
         #    pred = yolo.predict(image)
       
-       
-      for x in pred:
+    for x in pred:
         if c!=0:
             p=pred[x][0][0]
             translated=trans(p)
@@ -129,10 +139,11 @@ def respond(query):
             p=pred[x][0][0]
             translated=trans(p)
             con(translated)
+       
             
           
       #speak("That is the full view in front of you  ")   
-      return
+    return
 
 def wishMe():
 	hour = int(datetime.datetime.now().hour)
@@ -143,22 +154,30 @@ def wishMe():
 	else:
 		con("مساء الخير")
         
-def distance():
-    return print("hi")
+def distance(x):
+    return con(" احذر ")
 def fun(voice_data):
     while(1):
-        voice_data=t=command()
-        respond(voice_data)
-        if voice_data  =="سلام":
-            con("لى اللقاء ")
-            break
+            voice_data=t=command()
+            if voice_data  =="سلام":
+                con("إلى اللقاء ")
+                break
+            elif voice_data ==None:
+                con("عذرا لا أستطيع سماعك")  
+            else:
+                respond(voice_data)
+
+
 
     return
        
 
 wishMe()
 while(1):
-    distance()
+    x=random.uniform(0,10)
+    print(x)
+    if x<2:
+        distance(x)
     voice_data=t=command()
     if voice_data == 'مرحبا':
         con("مرحبا نورا")
