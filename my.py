@@ -1,61 +1,68 @@
-from contextlib import nullcontext
-import datetime
-from sys import flags
-import pyttsx3
-import speech_recognition as sr
+#from contextlib import nullcontext
+#from sys import flags
+from subprocess import call
 import random
-import playsound # to play an audio file
+import playsound as ps # to play an audio file
 import random
 from time import ctime # get time details
 import os
 import numpy as np
 import time
+
 import cv2
-from subprocess import call
+import pyttsx3
+import speech_recognition as sr
+import datetime
 from FaceR import FaceRecognition,extractEmbeddings
 from predict import yolo_model
-#import predict
+from gtts import gTTS
+from playsound import playsound
+import Tesseract as tr
 
-     
+#import predict
 engine = pyttsx3.init('sapi5')
 rate=engine.getProperty('rate')
 engine.setProperty('rate', 150)
 voices = engine.getProperty('voices')
 engine.setProperty('voice', voices[0].id)
-def speak(audio):
+
+def con(audio):
 	engine.say(audio)
 	engine.runAndWait()
+def con(voice):
+    try:
+        obj=gTTS(text=voice,lang='en',slow=False)
+        obj.save('text.mp3')
+        playsound('text.mp3')
+        os.remove('text.mp3')
+    except:
+        return        
 
 def wishMe():
 	hour = int(datetime.datetime.now().hour)
 	if hour>= 0 and hour<12:
-		speak("Good Morning  !")
+		con("Good Morning  !")
 
 	elif hour>= 12 and hour<18:
-		speak("Good Afternoon  !")
+		con("Good Afternoon  ! ")
 
 	else:
-		speak("Good Evening  !")
+		con("Good Evening  !")
 
-	assname =("Zomba")
-	speak("I am your Assistant")
-	speak(assname)
-	
+	con("I am your Assistant. Welcome Noura. How can i Help you?")
 
-def username():
-	speak("Welcome Noura. How can i Help you?")
-	
+
 
 def takeCommand():
-	
+	#initialize the recognizer
 	r = sr.Recognizer()
-	
+	#use microphone for input source
 	with sr.Microphone() as source:
 		
 		print("Listening...")
-		r.pause_threshold = 1
-		audio = r.listen(source)
-
+		#r.pause_threshold = 1
+        #listen for user
+		audio = r.listen(source,)
 	try:
 		print("Recognizing...")
 		query = r.recognize_google(audio, language ='en-in')
@@ -63,7 +70,6 @@ def takeCommand():
 
 	except Exception as e:
 		print(e)
-		#speak("Sorry,Unable to Recognize your voice. can you please repeat again")
 		return "None"
 	
 	return query
@@ -77,10 +83,10 @@ def respond(query):
     # 1: greeting
     if 'hi' in query:
         greet = "hello "
-        speak(greet)
+        con(greet)
         return
     if 'how are you'in query:
-        speak("I'm very well, thanks for asking ")
+        con("I'm very well, thanks for asking ")
         return
     #2:time
     if there_exists(["what's the time","tell me the time","what time is it","what is the time"]):
@@ -92,20 +98,21 @@ def respond(query):
             hours = time[0]
         minutes = time[1]
         time = f'{hours} {minutes}'
-        speak(time)    
+        con(time)    
         return
     #3:music
     if 'play music' in query or "play song" in query:
-            speak("Here you go with music")
+            con("Here you go with music")
             # music_dir = "G:\\Song"
             music_dir = "C:\\Users\\Dell\\Music"
             songs = os.listdir(music_dir)
-            print(songs)   
+            #print(songs)   
             random = os.startfile(os.path.join(music_dir, songs[1]))     
             return
-   
-    if'recognition'in query :
+    if 'face' in query:
+    #if there_exists(["Face","recignition","FaceRecognition"]):
           model = FaceRecognition()
+          
           #cam = cv2.VideoCapture(0)
           count=0
           a=[]
@@ -113,19 +120,23 @@ def respond(query):
           #while True:
           for x in range(3):
             
-             #ret, image = cam.read()
-            image=cv2.imread('download.jpg')
-            names,boxes= model.recognize(image)
-            model.draw_boxes(image,names,boxes)
+           # ret, image = cam.read()
+           image=cv2.imread('download.jpg')
+           names,boxes= model.recognize(image)
+           model.draw_boxes(image,names,boxes)
+           cv2.imshow('Input', image)
+           c = cv2.waitKey(1)
+           
+           print(names) 
             
-            if x==0:
+           if x==0:
              for f in names:
                if f != 'Unknown' :
                  flag=1
-                 speak(f +"is around you")
+                 con(f +"is around you")
                  a.insert(count,f) 
                  count=count+1
-            else:
+           else:
              while(len(names)):
                for f in names:
                  for h in a:
@@ -136,52 +147,70 @@ def respond(query):
 
              for f in names:
                 if f != 'Unknown' :
-                    speak(f +"is around you")
+                    con(f +"is around you")
                     a.insert(count,f) 
                     count=count+1
-                else:
-                  break
+                #else:
+                 # break
+                
 
 
-            if flag == 1:
-                speak("those are the people around you")
-            #cv2.imshow("image", image) 
-            return
-            #if cv2.waitKey(1) == 27:  # break if press ESC key
+          if flag == 1:
+                con("those are the people around you")
+                
+                return
+           
            
                    
-    if'view'in query :
+    if'detection'in query :
       yolo = yolo_model()
       #cam = cv2.VideoCapture(0)
-      c =0 
+      k =0
       #for x in range(3):
        #     ret, image = cam.read()
-      pred = yolo.predict(cv2.imread('data/dog.jpg'))
+      imageobj=cv2.imread('data/dog.jpg')
+      pred = yolo.predict(imageobj)
         #    pred = yolo.predict(image)
-      
+        
+      cv2.imshow('Input', imageobj)
+      c = cv2.waitKey(1)
+    
        
       for x in pred:
-        if c!=0:
-         speak("and"+pred[x][0][0] )  
+        print(pred[x][0][0] )
+        if k!=0:
+         con("and"+pred[x][0][0] )  
+         
         else:   
-            c=1
-            speak( "In front of you there is a"+pred[x][0][0])
+            k=1
+            #con( "In front of you there is a"+ pred[x][0][0])
+            con("In front of you there is a" )
+            con(pred[x][0][0])
+            
           
-      speak("That is the full view in front of you  ")   
+      con("That is the full view in front of you  ")   
       return
+    if'document'in query :
+        img=cv2.imread('dawa3.jpg')
+        doc=tr.DocumentReading(img)
+        #cv2.imshow('Input', img)
+        #c = cv2.waitKey(1)
+        print(doc)
+        con(doc)
+        con("That is the full document")
+        return
+
      
     if there_exists(["exit", "quit", "goodbye","bye"]):
-        speak("bye Noura")
+        con("bye Noura")
         exit()       
-    else: speak("Sorry,Unable to Recognize your voice. can you please repeat again")
+    else: con("Sorry,Unable to Recognize your voice. can you please repeat again")
 
-#wishMe() 
-username() 
-  
-while(1):   
+
+wishMe() 
+while(1):    
     voice_data = query = takeCommand().lower()# get the voice input
-    #voice_data='view'
+    #voice_data="face"
     if voice_data != 'none' :
-     x=respond(voice_data) # respond
-     
     
+     x=respond(voice_data) # respond
