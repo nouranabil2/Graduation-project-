@@ -103,36 +103,43 @@ def respond(query):
           flag=0
           #while True:
           for x in range(10):
-            
-           ret, image = cam.read()
+            """
+            if x==0:
+                image=cv2.imread('4.jpg')
+            if x ==1:
+                image=cv2.imread('download.jpg')            
+            if x ==3:
+             image=cv2.imread('1.jpg')       
+"""
+            ret, image = cam.read()
            #image=cv2.imread('download.jpg')
-           names,boxes= model.recognize(image)
-           model.draw_boxes(image,names,boxes)
-           cv2.imshow('Input', image)
-           c = cv2.waitKey(1)
+            names,boxes= model.recognize(image)
+            model.draw_boxes(image,names,boxes)
+            cv2.imshow('Input', image)
+            c = cv2.waitKey(1)
            
-           print(names) 
+            print(names) 
             
-           if x==0:
+            if x==0:
              for f in names:
                if f != 'Unknown' :
                  flag=1
                  con(f +"is around you")
                  a.insert(count,f) 
                  count=count+1
-           else:
-             while(len(names)):
-               for f in names:
-                 for h in a:
-                      if f == h:
-                          names.remove(f)
-                          break
-                      
+            else:
+             for round1 in range(len(names)):
+              for f in names:
+                 if(f in a):   
+                  names.remove(f)
+
+                  
 
              for f in names:
                 if f != 'Unknown' :
                     con(f +"is around you")
                     a.insert(count,f) 
+                    names.remove(f)
                     count=count+1
                 #else:
                  # break
@@ -150,12 +157,12 @@ def respond(query):
       allo=[]
       allo_count=0
       count=0
-      cam = cv2.VideoCapture(0)
+      #cam = cv2.VideoCapture(0)
       k =0
       for round in range(5):
             allo=[]
-            ret, imageobj = cam.read()
-            """
+            #ret, imageobj = cam.read()
+        
             if round==0:
                 imageobj=cv2.imread('data/1.jpg')
             if round ==1:
@@ -163,7 +170,7 @@ def respond(query):
             if round ==3:
                 imageobj=cv2.imread('test.jpg')       
 
-            """
+            
             pred = yolo.predict(imageobj)
            
 
@@ -177,48 +184,32 @@ def respond(query):
                 print(pred[x][0][0] )
                
                 #if k!=0:
-            if round!=0:    
+            #if round!=0:    
                     #while(len(allo)):
-                    for f in allo:
-                            for h in aobject:
+            for f in allo:
+                for h in aobject:
                                 if f == h:
                                     allo.remove(f)
                                     break
                     
-                    for new_k, new_val in pred.items():
+            for new_k, new_val in pred.items():
                             print(new_k, len([item for item in new_val if item]))
                             if(new_val[0][0] in allo):
                              if (len(new_val)>1 ):
                                 con("In front of you there are" )
                                 con(str(len(new_val))+new_val[0][0])
+                                aobject.insert(count,new_val[0][0]) 
+                                count=count+1
                                 allo.remove(new_val[0][0])
+
                              else:
                                 con("and"+ new_val[0][0])
-                                aobject.insert(count,f) 
+                                aobject.insert(count,new_val[0][0]) 
                                 count=count+1
                         
          
-            else:
-                    for new_k, new_val in pred.items():
-                            print(new_k, len([item for item in new_val if item]))
-                            if len(new_val)>1:
-                             con("In front of you there are" )
-                             con(str(len(new_val))+new_val[0][0])
-                             aobject.insert(count,allo[0]) 
-                             allo.remove(new_val[0][0])
-                    if k!=0:   
-                        con("and"+pred[x][0][0] )  
-                        con(allo[0])
-                        aobject.insert(count,allo[0]) 
-                        count=count+1
-                    else:
-                  
-                     if(len(allo)!=0):
-                        k=1
-                        con("In front of you there is a" )
-                        con(allo[0])
-                        aobject.insert(count,allo[0]) 
-                        count=count+1
+          
+                    
             
           
       con("That is the full view in front of you  ")   
@@ -244,7 +235,7 @@ def distance(x):
     return con(" Warrning! In front of you there is an object ")
 def fun(voice_data):
     while(1):
-            voice_data="detection"
+            voice_data="face"
             #voice_data=t=takeCommand().lower()
             if voice_data  =="bye":
                 con("bye Noura")
@@ -260,16 +251,20 @@ def fun(voice_data):
 #wishMe()
 while(1):
     x=random.uniform(0,5)
-    
     print(x)
     if x<2:
         distance(x)
     voice_data="hey"    
     #voice_data=t=takeCommand().lower()
-    if there_exists(["hey", "yafa"]):
+    if there_exists(["hey", "yafa","hey yafa"]):
         
         #con("hey noura, how can I help you ? ")
         fun(voice_data)
+    if there_exists(["arabic", "language"]):
+        
+        #con("hey noura, how can I help you ? ")
+        fun(voice_data)
+            
         
 
 """""
