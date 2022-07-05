@@ -18,7 +18,7 @@ from predict import yolo_model
 from gtts import gTTS
 from playsound import playsound
 import Tesseract as tr
-import predict1 as pr
+
 
 
 def con(voice):
@@ -150,11 +150,12 @@ def respond(query):
       allo=[]
       allo_count=0
       count=0
-      #cam = cv2.VideoCapture(0)
+      cam = cv2.VideoCapture(0)
       k =0
       for round in range(5):
             allo=[]
-            #ret, imageobj = cam.read()
+            ret, imageobj = cam.read()
+            """
             if round==0:
                 imageobj=cv2.imread('data/1.jpg')
             if round ==1:
@@ -162,57 +163,56 @@ def respond(query):
             if round ==3:
                 imageobj=cv2.imread('test.jpg')       
 
-            
+            """
             pred = yolo.predict(imageobj)
-         #    pred = yolo.predict(image)
            
 
             cv2.imshow('Input', imageobj)
             c = cv2.waitKey(1)
+
             # Create list of objects names in single frame
-            
             for x in pred:
                 allo.insert(allo_count,pred[x][0][0]) 
                 allo_count =allo_count+1
                 print(pred[x][0][0] )
-
-            for n in allo:  
                
                 #if k!=0:
-                if round!=0:    
-                    while(len(allo)):
-                        for f in allo:
+            if round!=0:    
+                    #while(len(allo)):
+                    for f in allo:
                             for h in aobject:
                                 if f == h:
                                     allo.remove(f)
                                     break
-                    for f in allo:
-                         for new_k, new_val in pred.items():
+                    
+                    for new_k, new_val in pred.items():
                             print(new_k, len([item for item in new_val if item]))
-                         if len(new_val)>1:
-                            con("In front of you there are" )
-                            con(str(len(new_val))+new_val[0][0])
-                            allo.remove(new_val[0][0])
-                         else:
-                            con("and"+ new_val[0][0])
-                         aobject.insert(count,f) 
-                         count=count+1
+                            if(new_val[0][0] in allo):
+                             if (len(new_val)>1 ):
+                                con("In front of you there are" )
+                                con(str(len(new_val))+new_val[0][0])
+                                allo.remove(new_val[0][0])
+                             else:
+                                con("and"+ new_val[0][0])
+                                aobject.insert(count,f) 
+                                count=count+1
                         
          
-                else:
+            else:
+                    for new_k, new_val in pred.items():
+                            print(new_k, len([item for item in new_val if item]))
+                            if len(new_val)>1:
+                             con("In front of you there are" )
+                             con(str(len(new_val))+new_val[0][0])
+                             aobject.insert(count,allo[0]) 
+                             allo.remove(new_val[0][0])
                     if k!=0:   
                         con("and"+pred[x][0][0] )  
                         con(allo[0])
                         aobject.insert(count,allo[0]) 
                         count=count+1
                     else:
-                     for new_k, new_val in pred.items():
-                            print(new_k, len([item for item in new_val if item]))
-                     if len(new_val)>1:
-                            con("In front of you there are" )
-                            con(str(len(new_val))+new_val[0][0])
-                            aobject.insert(count,allo[0]) 
-                            allo.remove(new_val[0][0])
+                  
                      if(len(allo)!=0):
                         k=1
                         con("In front of you there is a" )
@@ -257,7 +257,7 @@ def fun(voice_data):
 
 
     return
-wishMe()
+#wishMe()
 while(1):
     x=random.uniform(0,5)
     
@@ -268,7 +268,7 @@ while(1):
     #voice_data=t=takeCommand().lower()
     if there_exists(["hey", "yafa"]):
         
-        con("hey noura, how can I help you ? ")
+        #con("hey noura, how can I help you ? ")
         fun(voice_data)
         
 
