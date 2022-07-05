@@ -1,6 +1,8 @@
+from ctypes import resize
 import numpy as np
 import time
 import cv2
+
 
 
 
@@ -8,8 +10,8 @@ class yolo_model:
 	INPUT_FILE='data/dog.jpg'
 	OUTPUT_FILE='predicted.jpg'
 	LABELS_FILE='data/coco.names'
-	CONFIG_FILE='cfg/yolov3.cfg'
-	WEIGHTS_FILE='yolov3.weights'
+	CONFIG_FILE='yolov4.cfg'
+	WEIGHTS_FILE='yolov4.weights'
 	CONFIDENCE_THRESHOLD=0.3
 	LABELS = open(LABELS_FILE).read().strip().split("\n")
 
@@ -94,6 +96,7 @@ class yolo_model:
 				if not classIDs[i] in predictions.keys():
 					predictions[classIDs[i]]=list()
 				objname = self.LABELS[classIDs[i]]	
+				
 				predictions[classIDs[i]].append((objname,x, y, w, h,confidences[i]))
 				
 				cv2.rectangle(image, (x, y), (x + w, y + h), color, 2)
@@ -107,9 +110,28 @@ class yolo_model:
 
 		# show the output image
 		cv2.imwrite("example.png", image)
+		
 		# return a dict with classID as keys and value tuple(centerX,centerY,width,height,confidance)
 
 		return predictions
-		
+"""
+yolo = yolo_model()
 
- 
+cam = cv2.VideoCapture(0)
+while True:
+	ret, image = cam.read()
+	#image=cv2.imread('test.jpg')
+	pred = yolo.predict(image)
+	# show the output image
+	cv2.imshow("image", image) 
+	key = cv2.waitKey(1)
+	if key ==ord('q'):
+		break
+
+
+
+while true:	
+	image=cv2.imread('test.jpg')
+	pred,newimage = yolo.predict(image)
+	cv2.imshow("image", newimage) 
+"""
