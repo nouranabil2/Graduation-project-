@@ -2,6 +2,7 @@
 #from sys import flags
 from subprocess import call
 import random
+from xml.dom.minidom import Document
 import playsound as ps # to play an audio file
 import random
 from time import ctime # get time details
@@ -157,12 +158,12 @@ def respond(query):
       allo=[]
       allo_count=0
       count=0
-      #cam = cv2.VideoCapture(0)
+      cam = cv2.VideoCapture(0)
       k =0
       for round in range(5):
             allo=[]
-            #ret, imageobj = cam.read()
-        
+            ret, imageobj = cam.read()
+            """
             if round==0:
                 imageobj=cv2.imread('data/1.jpg')
             if round ==1:
@@ -170,9 +171,9 @@ def respond(query):
             if round ==3:
                 imageobj=cv2.imread('test.jpg')       
 
-            
+           """
             pred = yolo.predict(imageobj)
-           
+            
 
             cv2.imshow('Input', imageobj)
             c = cv2.waitKey(1)
@@ -186,11 +187,10 @@ def respond(query):
                 #if k!=0:
             #if round!=0:    
                     #while(len(allo)):
-            for f in allo:
-                for h in aobject:
-                                if f == h:
-                                    allo.remove(f)
-                                    break
+            for round1 in range(len(allo)):
+              for f in allo:
+                 if(f in aobject):   
+                  allo.remove(f)
                     
             for new_k, new_val in pred.items():
                             print(new_k, len([item for item in new_val if item]))
@@ -215,14 +215,21 @@ def respond(query):
       con("That is the full view in front of you  ")   
       return
     if'document'in query :
-        img=cv2.imread('dawa3.jpg')
-        doc=tr.DocumentReading(img)
-        #cv2.imshow('Input', img)
-        #c = cv2.waitKey(1)
-        print(doc)
-        con(doc)
-        con("That is the full document")
-        return
+     
+     cam = cv2.VideoCapture(0)
+     for round in range(2):
+        ret, img = cam.read()
+        #image=cv2.imread('download.jpg')
+        cv2.imshow('Input', img)
+        c = cv2.waitKey(1)
+        if c == 27:
+            break
+     doc=tr.DocumentReading(img)
+     print(doc)
+     con(doc)
+     con("That is the full document")    
+
+     return
 
      
     if there_exists(["exit", "quit", "goodbye","bye"]):
@@ -235,8 +242,8 @@ def distance(x):
     return con(" Warrning! In front of you there is an object ")
 def fun(voice_data):
     while(1):
-            voice_data="face"
-            #voice_data=t=takeCommand().lower()
+            voice_data="document"
+           # voice_data=t=takeCommand().lower()
             if voice_data  =="bye":
                 con("bye Noura")
                 break
@@ -248,23 +255,22 @@ def fun(voice_data):
 
 
     return
-#wishMe()
+wishMe()
 while(1):
-    x=random.uniform(0,5)
-    print(x)
+    x=random.uniform(10,15)
+    print("Sensor reading:"+str(x))
+    
     if x<2:
         distance(x)
     voice_data="hey"    
     #voice_data=t=takeCommand().lower()
     if there_exists(["hey", "yafa","hey yafa"]):
-        
-        #con("hey noura, how can I help you ? ")
+        con("hey noura, how can I help you ? ")
         fun(voice_data)
     if there_exists(["arabic", "language"]):
-        
-        #con("hey noura, how can I help you ? ")
         fun(voice_data)
-            
+    else:
+       print("That is not the keyward") 
         
 
 """""
