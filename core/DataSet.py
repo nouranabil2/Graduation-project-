@@ -9,7 +9,7 @@ from core.cfg_config import cfg
 
 class Dataset(object):
     def __init__(self,is_training:bool,dataset_type:str="converted_coco"):
-        self.strides,self.anchors,NUM_CLASS,XY_SCALE = utils.load_config()
+        self.strides,self.anchors,NUM_CLASS,XY_SCALE = utils.load_config(tiny=True)
         self.dataset_type= dataset_type
         self.annot_path = (
             cfg.TRAIN.ANNOT_PATH if is_training else cfg.TEST.ANNOT_PATH
@@ -43,6 +43,7 @@ class Dataset(object):
         np.random.shuffle(annotations)
         return annotations
     def parse_annotation(self,annotation):
+        classes=utils.read_class_name(cfg.YOLO.CLASSES)
         line = annotation.split()
         image_path = line[0]
         if not os.path.exists(image_path):
@@ -62,6 +63,11 @@ class Dataset(object):
             [self.train_input_size, self.train_input_size],
             np.copy(bboxes),
         )
+        t=np.copy(image)
+        # for box in bboxes:
+        #     t = cv2.rectangle(t, (box[0],box[1]),(box[2],box[3]) , 0, 2)
+        #     print(classes[box[4]])
+        # cv2.imwrite("test.jpg",t*255)
         return image, bboxes
 
     def __iter__(self):
@@ -93,8 +99,8 @@ class Dataset(object):
             batch_label_medium_bounding_box = np.zeros(
                 (
                     self.batch_size,
-                    self.train_output_sizes[1],
-                    self.train_output_sizes[1],
+                    self.train_output_sizes[0],
+                    self.train_output_sizes[0],
                     self.anchor_per_scale,
                     5+self.num_classes
                 ),
@@ -103,8 +109,8 @@ class Dataset(object):
             batch_label_large_bounding_box = np.zeros(
                 (
                     self.batch_size,
-                    self.train_output_sizes[2],
-                    self.train_output_sizes[2],
+                    self.train_output_sizes[1],
+                    self.train_output_sizes[1],
                     self.anchor_per_scale,
                     5+self.num_classes
                 ),
@@ -128,29 +134,30 @@ class Dataset(object):
                     annotation = self.annotations[index]
                     image ,bounding_boxs = self.parse_annotation(annotation)
                     (
-                        label_small_bounding_box,
                         label_med_bounding_box,
                         label_large_bounding_box,
-                        small_bounding_box,
                         med_bounding_box,
                         large_bound_box
                     ) = self.preprocess_true_boxes(bounding_boxs)
                     batch_data[num,:,:,:]=image
-                    batch_label_small_bounding_box[num,:,:,:] = label_small_bounding_box
+                    #batch_label_small_bounding_box[num,:,:,:] = label_small_bounding_box
                     batch_label_medium_bounding_box[num,:,:,:] = label_med_bounding_box
                     batch_label_large_bounding_box[num,:,:,:] = label_large_bounding_box
-                    batch_small_bounding_box[num,:,:]  = small_bounding_box
+                    #batch_small_bounding_box[num,:,:]  = small_bounding_box
                     batch_medium_bounding_box[num,:,:] = med_bounding_box
                     batch_large_bounding_box[num,:,:]  = large_bound_box
                     num+=1
                 self.batch_count+=1
-                batch_small_data_label  = batch_label_small_bounding_box , batch_small_bounding_box
+                #batch_small_data_label  = batch_label_small_bounding_box , batch_small_bounding_box
                 batch_medium_data_label = batch_label_medium_bounding_box, batch_medium_bounding_box
                 batch_large_data_label  = batch_label_large_bounding_box , batch_large_bounding_box
+                test_b = batch_medium_data_label
+                t = np.copy(batch_data*255)
+
                 return (
                     batch_data,
                     (
-                        batch_small_data_label,
+                        #batch_small_data_label,
                         batch_medium_data_label,
                         batch_large_data_label
                     )
@@ -230,14 +237,6 @@ class Dataset(object):
 
         return image, bounding_boxes
 
-
-
-
-
-
-
-
-
     def preprocess_true_boxes(self,bboxes):
         """
         train_output_size =[64,32,8]
@@ -258,10 +257,10 @@ class Dataset(object):
                     5+self.num_classes
                 )
             )
-            for i in range(3)
+            for i in range(2)
         ]
 
-        bboxes_xywh = [np.zeros((self.max_bbox_per_scale,4)) for i in range(3)]
+        bboxes_xywh = [np.zeros((self.max_bbox_per_scale,4)) for i in range(2)]
         bbox_count = np.zeros((3,))
         for bbox in bboxes:
             #gets bboxes coordinates Xul Yul Xlr Ylr
@@ -287,7 +286,7 @@ class Dataset(object):
             bbox_xywh_scaled = (1.0 * bbox_xywh[np.newaxis, :] / self.strides[:, np.newaxis])
             iou = []
             exist_positive = False
-            for i in range(3):
+            for i in range(2):
                 anchors_xywh = np.zeros((self.anchor_per_scale, 4))
                 #assignes anchors x and y to centerX and centerY of bounding box
                 anchors_xywh[:, 0:2] = (
@@ -299,6 +298,7 @@ class Dataset(object):
                 iou_scale = utils.bbox_iou(
                     bbox_xywh_scaled[i][np.newaxis, :], anchors_xywh
                 )
+                #print(iou_scale)
                 iou.append(iou_scale)
                 iou_mask = iou_scale > 0.3
 
@@ -312,11 +312,15 @@ class Dataset(object):
                     bbox_ind = int(bbox_count[i] % self.max_bbox_per_scale)
                     bboxes_xywh[i][bbox_ind, :4] = bbox_xywh
                     bbox_count[i] += 1
-
+                    #print("IN")
                     exist_positive = True
 
             if not exist_positive:
+                #print("NOT IN")
                 best_anchor_ind = np.argmax(np.array(iou).reshape(-1), axis=-1)
+                #print(best_anchor_ind)
+                #print(np.array(iou).reshape(-1).shape)
+                #print(best_anchor_ind)
                 best_detect = int(best_anchor_ind / self.anchor_per_scale)
                 best_anchor = int(best_anchor_ind % self.anchor_per_scale)
                 xind, yind = np.floor(
@@ -333,9 +337,9 @@ class Dataset(object):
                 )
                 bboxes_xywh[best_detect][bbox_ind, :4] = bbox_xywh
                 bbox_count[best_detect] += 1
-        label_sbbox, label_mbbox, label_lbbox = label
-        sbboxes, mbboxes, lbboxes = bboxes_xywh
-        return label_sbbox, label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes
+        label_mbbox, label_lbbox = label
+        mbboxes, lbboxes = bboxes_xywh
+        return label_mbbox, label_lbbox, mbboxes, lbboxes
 
 
 

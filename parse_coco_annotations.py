@@ -16,15 +16,17 @@ COCO_CLASSES = "data/coco.names"
 TRAIN_IMAGES_PATH = "data/train2017"
 VAL_IMAGES_PATH ="data/val2017"
 
-TRAIN_CONVERTED_COCO_ANNOTATIONS_PATH = "data/dataset/train2017.txt"
-VAL_CONVERTED_COCO_ANNOTATIONS_PATH = "data/dataset/val2017.txt"
+TRAIN_CONVERTED_COCO_ANNOTATIONS_PATH = "data/dataset/train_full2017.txt"
+VAL_CONVERTED_COCO_ANNOTATIONS_PATH = "data/dataset/val_full2017.txt"
 
 
 
 
 class COCO:
+    
     def parse(self,json_annotation_path):
         try:
+            classes = [1]
             json_data = json.load(open(json_annotation_path))
             images_info = json_data["images"]
             cat_info = json_data["categories"]
@@ -34,52 +36,52 @@ class COCO:
             for annotation in json_data["annotations"]:
                 image_id = annotation["image_id"]
                 category_id = annotation["category_id"]
+                if (((category_id) in classes )or True):
+                    file_name=None
+                    img_width=None
+                    img_height=None
+                    img_class=None
 
-                file_name=None
-                img_width=None
-                img_height=None
-                img_class=None
-
-                for info in images_info:
-                    if info["id"] == image_id:
-                        file_name,img_width,img_height = info["file_name"].split(".")[0],info["width"],info["height"]
-                        break
-                for category in cat_info:
-                    if category_id == category["id"]:
-                        img_class = category["name"]
-                        break
-                image_size = {
-                    "width":img_width,
-                    "height":img_height,
-                    "depth":"3"
-                }
-                bounding_box={
-                    "xmin": annotation["bbox"][0],
-                    "ymin": annotation["bbox"][1],
-                    "xmax": annotation["bbox"][2] + annotation["bbox"][0],
-                    "ymax": annotation["bbox"][3] + annotation["bbox"][1]
-                }
-                obj_info={
-                    "name":img_class,
-                    "bndbox":bounding_box
-                }
-                if file_name not in data:
-                    obj = {
-                        "num_obj":"1",
-                        "0":obj_info
+                    for info in images_info:
+                        if info["id"] == image_id:
+                            file_name,img_width,img_height = info["file_name"].split(".")[0],info["width"],info["height"]
+                            break
+                    for category in cat_info:
+                        if category_id == category["id"]:
+                            img_class = category["name"]
+                            break
+                    image_size = {
+                        "width":img_width,
+                        "height":img_height,
+                        "depth":"3"
                     }
-                    data[file_name] = {
-                        "size":image_size,
-                        "objects":obj
+                    bounding_box={
+                        "xmin": annotation["bbox"][0],
+                        "ymin": annotation["bbox"][1],
+                        "xmax": annotation["bbox"][2] + annotation["bbox"][0],
+                        "ymax": annotation["bbox"][3] + annotation["bbox"][1]
                     }
-                elif file_name in data:
-                    obj_idx = data[file_name]["objects"]["num_obj"]
-                    data[file_name]["objects"][obj_idx]=obj_info
-                    data[file_name]["objects"]["num_obj"]=str(int(data[file_name]["objects"]["num_obj"]) + 1)
-                percent = (float(percent_pro) / float(length)) * 100
-                print(str(percent_pro) + "/" + str(length) + " total: " + str(round(percent, 2)))
-                percent_pro += 1
-            #print(json.dumps(data, indent=4, sort_keys = True))
+                    obj_info={
+                        "name":img_class,
+                        "bndbox":bounding_box
+                    }
+                    if file_name not in data:
+                        obj = {
+                            "num_obj":"1",
+                            "0":obj_info
+                        }
+                        data[file_name] = {
+                            "size":image_size,
+                            "objects":obj
+                        }
+                    elif file_name in data:
+                        obj_idx = data[file_name]["objects"]["num_obj"]
+                        data[file_name]["objects"][obj_idx]=obj_info
+                        data[file_name]["objects"]["num_obj"]=str(int(data[file_name]["objects"]["num_obj"]) + 1)
+                    percent = (float(percent_pro) / float(length)) * 100
+                    print(str(percent_pro) + "/" + str(length) + " total: " + str(round(percent, 2)))
+                    percent_pro += 1
+                #print(json.dumps(data, indent=4, sort_keys = True))
             return True, data            
         except Exception as e:
             msg = str(e)

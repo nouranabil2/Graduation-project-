@@ -14,6 +14,50 @@ from tensorflow.keras.preprocessing.image import load_img
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.applications.imagenet_utils import decode_predictions
 from tensorflow.python.keras.utils import*
+def tiny_CSPdarknet(input_data):
+    input_data = block.convolutional_block(input_data,(3,3,3,32),downsample=True,activation_func="leaky_relu")
+    input_data = block.convolutional_block(input_data,(3,3,32,64),downsample=True,activation_func="leaky_relu")
+    input_data = block.convolutional_block(input_data,(3,3,64,64),activation_func="leaky_relu")
+    route = input_data
+    input_data = block.route_group(input_data,2,1)
+    input_data = block.convolutional_block(input_data,(3,3,32,32),activation_func="leaky_relu")
+    route_1=input_data
+    input_data=block.convolutional_block(input_data,(3,3,32,32),activation_func="leaky_relu")
+    input_data = tf.concat([input_data,route_1],axis=-1)
+    input_data=block.convolutional_block(input_data,(1,1,32,64),activation_func="leaky_relu")
+    input_data = tf.concat([route,input_data],axis=-1)
+    input_data = tf.keras.layers.MaxPool2D(2,2,"same")(input_data)
+
+    input_data = block.convolutional_block(input_data,(3,3,128,128),activation_func="leaky_relu")
+    route = input_data
+    input_data = block.route_group(input_data,2,1)
+    input_data = block.convolutional_block(input_data,(3,3,64,64),activation_func="leaky_relu")
+    route_1=input_data
+    input_data=block.convolutional_block(input_data,(3,3,64,64),activation_func="leaky_relu")
+    input_data = tf.concat([input_data,route_1],axis=-1)
+    input_data=block.convolutional_block(input_data,(1,1,64,128),activation_func="leaky_relu")
+    input_data = tf.concat([route,input_data],axis=-1)
+    input_data = tf.keras.layers.MaxPool2D(2,2,"same")(input_data)
+
+    input_data = block.convolutional_block(input_data,(3,3,256,256),activation_func="leaky_relu")
+    route = input_data
+    input_data = block.route_group(input_data,2,1)
+    input_data = block.convolutional_block(input_data,(3,3,128,128),activation_func="leaky_relu")
+    route_1=input_data
+    input_data=block.convolutional_block(input_data,(3,3,128,128),activation_func="leaky_relu")
+    input_data = tf.concat([input_data,route_1],axis=-1)
+    input_data=block.convolutional_block(input_data,(1,1,128,265),activation_func="leaky_relu")
+    input_data = tf.concat([route,input_data],axis=-1)
+    input_data = tf.keras.layers.MaxPool2D(2,2,"same")(input_data)
+    input_data = block.convolutional_block(input_data,(3,3,512,512),activation_func="leaky_relu")
+    return route_1,input_data
+
+
+
+
+
+
+
 
 def cspdarknet53(input_data):
     #(kernel_width,kernel_height,input_channel,output_channel)

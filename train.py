@@ -12,6 +12,7 @@ WEIGHTS_PATH = "./yolov4.weights"
 LOG_DIR = "./data/log"
 def train_step(image_data,target):
     with tf.GradientTape() as tape:
+        tf.print(image_data)
         predications = model(image_data,training=True)
         giou_loss = 0
         conf_loss = 0
@@ -33,7 +34,7 @@ def train_step(image_data,target):
         if global_steps<warmup_steps:
             lr = global_steps / warmup_steps * cfg.TRAIN.LR_INIT
         else:
-            lr = cfg.TRAIN.LR_END +0.5(cfg.TRAIN.LR_INIT-cfg.TRAIN.LR_END)*(
+            lr = (cfg.TRAIN.LR_END) +0.5*((cfg.TRAIN.LR_INIT)-(cfg.TRAIN.LR_END))*(
                 (1+tf.cos((global_steps-warmup_steps)/(total_steps-warmup_steps)*np.pi))
             )
         opt.lr.assign(lr.numpy())
@@ -46,6 +47,7 @@ def train_step(image_data,target):
         writer.flush()
 def test_step(image_data,target):
     predications = model(image_data,training=True)
+    tf.print(predications)
     giou_loss = 0
     conf_loss = 0
     prob_loss = 0
@@ -69,10 +71,10 @@ if __name__=="__main__":
     trainData = Dataset(is_training=True)
     testData  = Dataset(is_training=False)
     isfreeze=False
-    steps_per_epoch = len(trainData)
+    steps_per_epoch = len(trainData)*50
     first_stage_epochs = cfg.TRAIN.FISRT_STAGE_EPOCHS
     second_stage_epochs = cfg.TRAIN.SECOND_STAGE_EPOCHS
-    global_steps = tf.Variable(1,trainable=False,dtype=tf.int64)
+    global_steps = tf.Variable(213027,trainable=False,dtype=tf.int64)
     warmup_steps = cfg.TRAIN.WARMUP_EPOCHS * steps_per_epoch
     total_steps= (first_stage_epochs+second_stage_epochs)*steps_per_epoch
     input_layer = tf.keras.layers.Input([cfg.TRAIN.INPUT_SIZE,cfg.TRAIN.INPUT_SIZE,3])
@@ -91,9 +93,12 @@ if __name__=="__main__":
         bounding_boxes.append(feature)
         bounding_boxes.append(bounding_box)
     model = tf.keras.Model(input_layer,bounding_boxes)
-    utils.load_darknet(model,"./csdarknet53-omega_final.weights")
-
+    #utils.load_darknet(model,"./csdarknet53-omega_final.weights")
+    #model = tf.saved_model.load('saved_model')
     model.summary()
+    print("loading weights")
+    model.load_weights("./checkpoints/fixed_giou_10-3/yoloV4_11")
+    
     opt = tf.keras.optimizers.Adam()
     if os.path.exists(LOG_DIR):
         shutil.rmtree(LOG_DIR)
@@ -115,7 +120,7 @@ if __name__=="__main__":
             train_step(image_data,target)
         for image_data ,target in testData:
             test_step(image_data,target)
-        tf.keras.models.save_model(model,"./")
+        model.save_weights("./checkpoints/yoloV4")
         
 
 

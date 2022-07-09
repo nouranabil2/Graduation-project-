@@ -5,6 +5,28 @@ from core.utils import *
 import core.block as block
 import core.CSPdarknet53 as CSPdarknet53
 from core.cfg_config import cfg
+def YOLOv4_tiny(input_layer,NUM_CLASS):
+    route_1 ,conv =CSPdarknet53.tiny_CSPdarknet(input_layer)
+
+    conv = block.convolutional_block(conv,(1,1,512,256),activation_func="leaky_relu" )
+    large_obj_branch =  block.convolutional_block(conv,(3,3,256,512),activation_func="leaky_relu" )
+    conv_lbbox = block.convolutional_block(large_obj_branch,(1,1,512,3*(NUM_CLASS+5)) ,activation_func=False,batch_normalize=False)
+
+    conv = block.convolutional_block(conv,(1,1,256,128),activation_func="leaky_relu" )
+    conv = block.upsample(conv)
+    conv = tf.concat([conv,route_1],axis=-1)
+
+    med_obj_branch =  block.convolutional_block(conv,(3,3,128,256),activation_func="leaky_relu" )
+    conv_mbbox = block.convolutional_block(med_obj_branch,(1,1,256,3*(NUM_CLASS+5)) ,activation_func=False,batch_normalize=False)
+    
+    return [conv_mbbox,conv_lbbox]
+
+
+
+
+
+
+
 
 def YOLOv4(input_layer, NUM_CLASS):
     first_route,second_route,conv = CSPdarknet53.cspdarknet53(input_layer)
@@ -81,8 +103,7 @@ def YOLOv4(input_layer, NUM_CLASS):
 # model = tf.keras.Model(inputs=input_layer, outputs=yolo)
 # model.summary()
 def decode_output(net_output,output_size,NUM_CLASS,STRIDES,ANCHORS,i,XYSCALE=[1,1,1]):
-    net_output = tf.reshape( net_output,(tf.shape(net_output)[0],output_size,output_size,3,5+NUM_CLASS) )
-    dxdy,dwdh,confidance,probabilty = tf.split(net_output,(2,2,1,NUM_CLASS),axis=-1)
+    
     # meshgrid returns to arrays 
     #one for x values and one for y values 
     """
@@ -110,8 +131,9 @@ def decode_output(net_output,output_size,NUM_CLASS,STRIDES,ANCHORS,i,XYSCALE=[1,
     (64,3,3,3,2)
     genral case
     (conv_output.shape[0],output_size,output_size,number_of_anchors,2)
-
     """
+    net_output = tf.reshape( net_output,(tf.shape(net_output)[0],output_size,output_size,3,5+NUM_CLASS) )
+    dxdy,dwdh,confidance,probabilty = tf.split(net_output,(2,2,1,NUM_CLASS),axis=-1)
     xy_grid = tf.meshgrid(tf.range(output_size),tf.range(output_size))
     xy_grid = tf.expand_dims(tf.stack(xy_grid,axis=-1),axis=2)
     xy_grid = tf.tile(tf.expand_dims(xy_grid,axis=0),[tf.shape(net_output)[0],1,1,3,1])
@@ -123,7 +145,9 @@ def decode_output(net_output,output_size,NUM_CLASS,STRIDES,ANCHORS,i,XYSCALE=[1,
     xywh = tf.concat([pred_xy,pred_wh],axis=-1)
     pred_conf=tf.sigmoid(confidance)
     pred_prob = tf.sigmoid(probabilty)
+
     return tf.concat([xywh,pred_conf,pred_prob],axis=-1)
+
 def decode_tf(conv_output, output_size, NUM_CLASS, STRIDES, ANCHORS, i=0, XYSCALE=[1, 1, 1]):
     batch_size = tf.shape(conv_output)[0]
     conv_output = tf.reshape(conv_output,
@@ -133,13 +157,12 @@ def decode_tf(conv_output, output_size, NUM_CLASS, STRIDES, ANCHORS, i=0, XYSCAL
                                                                           axis=-1)
 
     xy_grid = tf.meshgrid(tf.range(output_size), tf.range(output_size))
-    xy_grid = tf.expand_dims(tf.stack(xy_grid, axis=-1), axis=2)  # [gx, gy, 1, 2]
+    xy_grid = tf.expand_dims(tf.stack(xy_grid, axis=-1), axis=2) 
     xy_grid = tf.tile(tf.expand_dims(xy_grid, axis=0), [batch_size, 1, 1, 3, 1])
 
     xy_grid = tf.cast(xy_grid, tf.float32)
 
-    pred_xy = ((tf.sigmoid(conv_raw_dxdy) * XYSCALE[i]) - 0.5 * (XYSCALE[i] - 1) + xy_grid) * \
-              STRIDES[i]
+    pred_xy = ((tf.sigmoid(conv_raw_dxdy) * XYSCALE[i]) - 0.5 * (XYSCALE[i] - 1) + xy_grid) * STRIDES[i]
     pred_wh = (tf.exp(conv_raw_dwdh) * ANCHORS[i])
     pred_xywh = tf.concat([pred_xy, pred_wh], axis=-1)
 
@@ -151,6 +174,36 @@ def decode_tf(conv_output, output_size, NUM_CLASS, STRIDES, ANCHORS, i=0, XYSCAL
     pred_xywh = tf.reshape(pred_xywh, (batch_size, -1, 4))
 
     return pred_xywh, pred_prob
+
+
+
+def filter_boxes(box_xywh,scores,score_threshold=0.4,input_shape=tf.constant([416,416])):
+    max_score = tf.math.reduce_max(scores,axis=-1)
+    mask = max_score >=score_threshold
+    class_boxes = tf.boolean_mask(box_xywh,mask)
+    pred_conf = tf.boolean_mask(scores,mask)
+
+    class_boxes = tf.reshape(class_boxes,[tf.shape(scores)[0],-1,class_boxes.shape[-1]])
+    pred_conf = tf.reshape(pred_conf,[tf.shape(scores)[0],-1,pred_conf.shape[-1]])
+
+    box_xy,box_wh = tf.split(class_boxes,(2,2),axis =-1)
+    input_shape = tf.cast(input_shape,dtype=tf.float32)
+    box_yx = box_xy[...,::-1]
+    box_hw = box_wh[...,::-1]
+
+    box_min = (box_yx -(box_hw/2.))/input_shape
+    box_max = (box_yx +(box_hw/2.))/input_shape
+
+    boxes = tf.concat([box_min[...,0:1],box_min[...,1:2],box_max[...,0:1],box_max[...,1:2]],axis=-1)
+    return boxes,pred_conf
+
+
+
+
+
+
+
+
 def compute_loss(predication,conv,label,bounding_boxes,STRIDES,IOU_LOSS_THRESH,NUM_CLASS,i=0):
     conv_shape = tf.shape(conv)
     batch_size = conv_shape[0]
@@ -160,6 +213,7 @@ def compute_loss(predication,conv,label,bounding_boxes,STRIDES,IOU_LOSS_THRESH,N
 
     raw_conf = conv[:,:,:,:,4:5]
     raw_prob = conv[:,:,:,:,5:]
+
     predection_xywh = predication[:,:,:,:,0:4]
     predection_conf = predication[:,:,:,:,4:5]
 
@@ -169,9 +223,10 @@ def compute_loss(predication,conv,label,bounding_boxes,STRIDES,IOU_LOSS_THRESH,N
 
     giou = tf.expand_dims(bbox_GenralizedIou(predection_xywh,label_xywh),axis=-1)
     input_size = tf.cast(input_size,tf.float32)
-    bounding_boxes_loss_scale = 2.0 - 1.0*(label_xywh[:,:,:,:2:3]*label_xywh[:,:,:,:,3:4])/(input_size**2)
+    bounding_boxes_loss_scale = 2.0 - 1.0* label_xywh[:,:,:,:2:3]*label_xywh[:,:,:,:,3:4]/(input_size**2)
     giou_loss = obj * bounding_boxes_loss_scale *(1-giou)
-
+    #print(tf.reduce_mean(tf.reduce_sum(bounding_boxes_loss_scale *(1-giou),axis=[1,2,3,4])))
+    #print(obj[obj >0])
     iou = bbox_iou(predection_xywh[:,:,:,:,np.newaxis,:],bounding_boxes[:,np.newaxis,np.newaxis,np.newaxis,:,:])
     max_iou = tf.expand_dims(tf.reduce_max(iou,axis=-1),axis=-1)
     noobj = (1-obj) * tf.cast(max_iou>IOU_LOSS_THRESH,tf.float32)

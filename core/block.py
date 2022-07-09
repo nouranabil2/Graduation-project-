@@ -40,3 +40,6 @@ def residual_block(input_layer,input_channel,filter1,filter2,activation_func="mi
     return res_block_output
 def upsample(layer):
     return tf.image.resize(layer,(layer.shape[1]*2,layer.shape[2]*2),method="bilinear")
+def route_group(input_layer,groups,group_id):
+    sub_layers = tf.split(input_layer,num_or_size_splits=groups,axis=-1)
+    return sub_layers[group_id]
