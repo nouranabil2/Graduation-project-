@@ -2,7 +2,10 @@ import numpy as np
 import time
 import cv2
 
-
+  
+	
+	
+	
 
 class yolo_model:
 	INPUT_FILE='data/dog.jpg'
